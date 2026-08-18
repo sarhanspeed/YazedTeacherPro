@@ -30,7 +30,10 @@ jobs:
           set -euo pipefail
           if [ -d bootstrap ]; then
             TARGET_BRANCH="${GITHUB_HEAD_REF:-main}"
-            cat bootstrap/part*.txt | base64 -d > /tmp/YazedTeacherPro_Source.zip
+            {
+              head -c 8000 bootstrap/part01.txt
+              cat bootstrap/part02.txt bootstrap/part03.txt bootstrap/part04.txt bootstrap/part05.txt
+            } | base64 -d > /tmp/YazedTeacherPro_Source.zip
             rm -rf /tmp/yazed-src
             mkdir -p /tmp/yazed-src
             unzip -q /tmp/YazedTeacherPro_Source.zip -d /tmp/yazed-src
@@ -41,6 +44,40 @@ jobs:
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
             git add -A
             git commit -m "Import YazedTeacherPro Android source"
+            git push origin HEAD:"${TARGET_BRANCH}"
+          fi
+
+      - name: Normalize Kotlin SQLite bind arrays
+        shell: bash
+        run: |
+          set -euo pipefail
+          FILE="app/src/main/java/com/sarhansoftware/yazedteacherpro/data/YazedTeacherProDb.kt"
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path("app/src/main/java/com/sarhansoftware/yazedteacherpro/data/YazedTeacherProDb.kt")
+          s = p.read_text()
+          targets = [
+              'arrayOf(name.trim(), address.trim(), phone.trim(), percent, now())',
+              'arrayOf(name.trim(), subject.trim(), grade.trim(), day.trim(), time.trim(), price, centerId, percent, now())',
+              'arrayOf(sessionId, studentId, sessionId, studentId, status)',
+              'arrayOf(studentId, groupId, paid, due, today(), method.trim(), receipt.trim(), notes.trim())',
+              'arrayOf(today(), category.trim(), amount, notes.trim())',
+              'arrayOf(name.trim(), groupId, maxScore, today())',
+              'arrayOf(examId, studentId, examId, studentId, score)',
+              'arrayOf(status, if (status == "Sent") now() else null, id)',
+              'arrayOf(type.trim(), type.trim(), body, if (active) 1 else 0, now())',
+              'arrayOf(studentId, phone.trim(), type, body, now())',
+          ]
+          for target in targets:
+              s = s.replace(target, target.replace('arrayOf(', 'arrayOf<Any?>(', 1))
+          p.write_text(s)
+          PY
+          if ! git diff --quiet -- "$FILE"; then
+            TARGET_BRANCH="${GITHUB_HEAD_REF:-main}"
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add "$FILE"
+            git commit -m "Fix Kotlin 2.3 SQLite bind arrays"
             git push origin HEAD:"${TARGET_BRANCH}"
           fi
 
@@ -55,11 +92,10 @@ jobs:
         with:
           gradle-version: "8.13"
 
-      - name: Accept Android SDK licenses
-        run: yes | sdkmanager --licenses >/dev/null || true
-
-      - name: Install Android SDK 36
-        run: sdkmanager "platforms;android-36" "build-tools;35.0.0"
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v4
+        with:
+          packages: 'platform-tools platforms;android-36 build-tools;35.0.0'
 
       - name: Restore stable debug keystore
         uses: actions/cache@v4
