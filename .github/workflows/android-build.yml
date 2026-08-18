@@ -128,3 +128,22 @@ jobs:
           gh release create latest YazedTeacherPro.apk \
             --title "YazedTeacherPro - Latest Android APK" \
             --notes "Installable Android APK built automatically by GitHub Actions from commit ${GITHUB_SHA}."
+
+      - name: Record successful cloud build
+        if: github.event_name != 'pull_request'
+        shell: bash
+        run: |
+          cat > BUILD_STATUS.md <<EOF
+          # YazedTeacherPro Android Build
+
+          Status: SUCCESS
+          APK: YazedTeacherPro.apk
+          Release tag: latest
+          Source commit: ${GITHUB_SHA}
+          Download: https://github.com/${GITHUB_REPOSITORY}/releases/latest/download/YazedTeacherPro.apk
+          EOF
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add BUILD_STATUS.md
+          git commit -m "Record successful Android cloud build [skip ci]" || exit 0
+          git push origin HEAD:main
