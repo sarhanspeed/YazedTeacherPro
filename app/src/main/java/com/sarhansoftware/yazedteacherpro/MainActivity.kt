@@ -4,7 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import com.sarhansoftware.yazedteacherpro.data.YazedTeacherProDb
-import com.sarhansoftware.yazedteacherpro.ui.YazedTeacherProApp
+import com.sarhansoftware.yazedteacherpro.professional.ProfessionalApp
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -12,6 +12,6 @@ class MainActivity : ComponentActivity() {
         val db = YazedTeacherProDb(applicationContext)
         db.writableDatabase
         db.ensureTrialStarted()
-        setContent { YazedTeacherProApp(db) }
+        setContent { ProfessionalApp(db) }
     }
 }
