@@ -294,7 +294,7 @@ class YazedTeacherProDb(private val context: Context) : SQLiteOpenHelper(context
 
     fun centers(): List<Center> = readableDatabase.rawQuery("SELECT Id,Name,COALESCE(Address,''),COALESCE(Phone,''),CenterSharePercent FROM Centers ORDER BY Id DESC", null).use { c -> buildList { while (c.moveToNext()) add(Center(c.getLong(0), c.getString(1), c.getString(2), c.getString(3), c.getDouble(4))) } }
     fun addCenter(name: String, address: String, phone: String, percent: Double) {
-        writableDatabase.execSQL("INSERT INTO Centers(Name,Address,Phone,CenterSharePercent,CreatedAt) VALUES(?,?,?,?,?)", arrayOf(name.trim(), address.trim(), phone.trim(), percent, now()))
+        writableDatabase.execSQL("INSERT INTO Centers(Name,Address,Phone,CenterSharePercent,CreatedAt) VALUES(?,?,?,?,?)", arrayOf<Any?>(name.trim(), address.trim(), phone.trim(), percent, now()))
     }
 
     fun groups(): List<GroupInfo> = readableDatabase.rawQuery("SELECT g.Id,g.Name,COALESCE(g.Subject,''),COALESCE(g.Grade,''),COALESCE(g.DayOfWeek,''),COALESCE(g.StartTime,''),g.MonthlyPrice,g.CenterId,COALESCE(c.Name,''),g.CenterSharePercent FROM GroupsTbl g LEFT JOIN Centers c ON c.Id=g.CenterId WHERE g.IsActive=1 ORDER BY g.Id DESC", null).use { c ->
@@ -302,7 +302,7 @@ class YazedTeacherProDb(private val context: Context) : SQLiteOpenHelper(context
     }
 
     fun addGroup(name: String, subject: String, grade: String, day: String, time: String, price: Double, centerId: Long?, percent: Double) {
-        writableDatabase.execSQL("INSERT INTO GroupsTbl(Name,Subject,Grade,DayOfWeek,StartTime,MonthlyPrice,CenterId,CenterSharePercent,IsActive,CreatedAt) VALUES(?,?,?,?,?,?,?,?,1,?)", arrayOf(name.trim(), subject.trim(), grade.trim(), day.trim(), time.trim(), price, centerId, percent, now()))
+        writableDatabase.execSQL("INSERT INTO GroupsTbl(Name,Subject,Grade,DayOfWeek,StartTime,MonthlyPrice,CenterId,CenterSharePercent,IsActive,CreatedAt) VALUES(?,?,?,?,?,?,?,?,1,?)", arrayOf<Any?>(name.trim(), subject.trim(), grade.trim(), day.trim(), time.trim(), price, centerId, percent, now()))
     }
 
     fun linkStudentToGroup(studentId: Long, groupId: Long) = writableDatabase.execSQL("INSERT OR IGNORE INTO StudentGroups(StudentId,GroupId) VALUES(?,?)", arrayOf(studentId, groupId))
@@ -321,7 +321,7 @@ class YazedTeacherProDb(private val context: Context) : SQLiteOpenHelper(context
 
     fun markAttendance(groupId: Long, groupName: String, studentId: Long, status: String, date: String) {
         val sessionId = attendanceSessionId(groupId, date)
-        writableDatabase.execSQL("INSERT OR REPLACE INTO AttendanceRecords(Id,SessionId,StudentId,Status,Notes) VALUES((SELECT Id FROM AttendanceRecords WHERE SessionId=? AND StudentId=?),?,?,?,'')", arrayOf(sessionId, studentId, sessionId, studentId, status))
+        writableDatabase.execSQL("INSERT OR REPLACE INTO AttendanceRecords(Id,SessionId,StudentId,Status,Notes) VALUES((SELECT Id FROM AttendanceRecords WHERE SessionId=? AND StudentId=?),?,?,?,'')", arrayOf<Any?>(sessionId, studentId, sessionId, studentId, status))
         if (status == "غياب") {
             val s = students().firstOrNull { it.id == studentId } ?: return
             val body = buildMessage("غياب", mapOf("اسم الطالب" to s.name, "المجموعة" to groupName, "التاريخ" to date, "اسم السنتر" to businessName()))
@@ -334,7 +334,7 @@ class YazedTeacherProDb(private val context: Context) : SQLiteOpenHelper(context
     }
 
     fun addPayment(studentId: Long, groupId: Long?, paid: Double, due: Double, method: String, receipt: String, notes: String) {
-        writableDatabase.execSQL("INSERT INTO Payments(StudentId,GroupId,AmountPaid,DueAmount,PaymentDate,Method,ReceiptNo,Notes) VALUES(?,?,?,?,?,?,?,?)", arrayOf(studentId, groupId, paid, due, today(), method.trim(), receipt.trim(), notes.trim()))
+        writableDatabase.execSQL("INSERT INTO Payments(StudentId,GroupId,AmountPaid,DueAmount,PaymentDate,Method,ReceiptNo,Notes) VALUES(?,?,?,?,?,?,?,?)", arrayOf<Any?>(studentId, groupId, paid, due, today(), method.trim(), receipt.trim(), notes.trim()))
         if (due > 0) {
             val s = students().firstOrNull { it.id == studentId }
             val g = groups().firstOrNull { it.id == groupId }
@@ -343,15 +343,15 @@ class YazedTeacherProDb(private val context: Context) : SQLiteOpenHelper(context
     }
 
     fun expenses(): List<ExpenseRow> = readableDatabase.rawQuery("SELECT Id,ExpenseDate,Category,Amount,COALESCE(Notes,'') FROM Expenses ORDER BY Id DESC", null).use { c -> buildList { while (c.moveToNext()) add(ExpenseRow(c.getLong(0), c.getString(1), c.getString(2), c.getDouble(3), c.getString(4))) } }
-    fun addExpense(category: String, amount: Double, notes: String) = writableDatabase.execSQL("INSERT INTO Expenses(ExpenseDate,Category,Amount,Notes) VALUES(?,?,?,?)", arrayOf(today(), category.trim(), amount, notes.trim()))
+    fun addExpense(category: String, amount: Double, notes: String) = writableDatabase.execSQL("INSERT INTO Expenses(ExpenseDate,Category,Amount,Notes) VALUES(?,?,?,?)", arrayOf<Any?>(today(), category.trim(), amount, notes.trim()))
 
     fun exams(): List<ExamRow> = readableDatabase.rawQuery("SELECT e.Id,e.Name,e.GroupId,COALESCE(g.Name,''),e.MaxScore,e.ExamDate FROM Exams e LEFT JOIN GroupsTbl g ON g.Id=e.GroupId ORDER BY e.Id DESC", null).use { c -> buildList { while (c.moveToNext()) add(ExamRow(c.getLong(0), c.getString(1), if (c.isNull(2)) null else c.getLong(2), c.getString(3), c.getDouble(4), c.getString(5))) } }
-    fun addExam(name: String, groupId: Long?, maxScore: Double) = writableDatabase.execSQL("INSERT INTO Exams(Name,GroupId,MaxScore,ExamDate) VALUES(?,?,?,?)", arrayOf(name.trim(), groupId, maxScore, today()))
+    fun addExam(name: String, groupId: Long?, maxScore: Double) = writableDatabase.execSQL("INSERT INTO Exams(Name,GroupId,MaxScore,ExamDate) VALUES(?,?,?,?)", arrayOf<Any?>(name.trim(), groupId, maxScore, today()))
 
     fun examStudents(examId: Long): List<ExamStudent> = readableDatabase.rawQuery("SELECT s.Id,s.FullName,COALESCE(r.Score,0) FROM Exams e JOIN StudentGroups sg ON sg.GroupId=e.GroupId JOIN Students s ON s.Id=sg.StudentId LEFT JOIN ExamResults r ON r.ExamId=e.Id AND r.StudentId=s.Id WHERE e.Id=? ORDER BY s.FullName", arrayOf(examId.toString())).use { c -> buildList { while (c.moveToNext()) add(ExamStudent(c.getLong(0), c.getString(1), c.getDouble(2))) } }
 
     fun saveExamScore(examId: Long, studentId: Long, score: Double) {
-        writableDatabase.execSQL("INSERT OR REPLACE INTO ExamResults(Id,ExamId,StudentId,Score) VALUES((SELECT Id FROM ExamResults WHERE ExamId=? AND StudentId=?),?,?,?)", arrayOf(examId, studentId, examId, studentId, score))
+        writableDatabase.execSQL("INSERT OR REPLACE INTO ExamResults(Id,ExamId,StudentId,Score) VALUES((SELECT Id FROM ExamResults WHERE ExamId=? AND StudentId=?),?,?,?)", arrayOf<Any?>(examId, studentId, examId, studentId, score))
         queueExamMessage(examId, studentId)
     }
 
@@ -365,7 +365,7 @@ class YazedTeacherProDb(private val context: Context) : SQLiteOpenHelper(context
     }
 
     fun whatsappMessages(): List<WhatsAppRow> = readableDatabase.rawQuery("SELECT Id,COALESCE(Phone,''),MessageType,MessageBody,Status,CreatedAt FROM WhatsAppMessages ORDER BY Id DESC", null).use { c -> buildList { while (c.moveToNext()) add(WhatsAppRow(c.getLong(0), c.getString(1), c.getString(2), c.getString(3), c.getString(4), c.getString(5))) } }
-    fun markWhatsApp(id: Long, status: String) = writableDatabase.execSQL("UPDATE WhatsAppMessages SET Status=?,SentAt=? WHERE Id=?", arrayOf(status, if (status == "Sent") now() else null, id))
+    fun markWhatsApp(id: Long, status: String) = writableDatabase.execSQL("UPDATE WhatsAppMessages SET Status=?,SentAt=? WHERE Id=?", arrayOf<Any?>(status, if (status == "Sent") now() else null, id))
 
     fun normalizePhone(phone: String): String {
         var digits = phone.filter { it.isDigit() }
@@ -377,7 +377,7 @@ class YazedTeacherProDb(private val context: Context) : SQLiteOpenHelper(context
 
     fun templates(): List<TemplateRow> = readableDatabase.rawQuery("SELECT Id,MessageType,Body,IsActive,UpdatedAt FROM WhatsAppTemplates ORDER BY MessageType", null).use { c -> buildList { while (c.moveToNext()) add(TemplateRow(c.getLong(0), c.getString(1), c.getString(2), c.getInt(3) == 1, c.getString(4))) } }
     fun saveTemplate(type: String, body: String, active: Boolean, user: String) {
-        writableDatabase.execSQL("INSERT OR REPLACE INTO WhatsAppTemplates(Id,MessageType,Body,IsActive,UpdatedAt) VALUES((SELECT Id FROM WhatsAppTemplates WHERE MessageType=?),?,?,?,?)", arrayOf(type.trim(), type.trim(), body, if (active) 1 else 0, now()))
+        writableDatabase.execSQL("INSERT OR REPLACE INTO WhatsAppTemplates(Id,MessageType,Body,IsActive,UpdatedAt) VALUES((SELECT Id FROM WhatsAppTemplates WHERE MessageType=?),?,?,?,?)", arrayOf<Any?>(type.trim(), type.trim(), body, if (active) 1 else 0, now()))
         audit(user, "UpdateWhatsAppTemplate", type.trim())
     }
 
@@ -389,7 +389,7 @@ class YazedTeacherProDb(private val context: Context) : SQLiteOpenHelper(context
 
     private fun queueWhatsApp(studentId: Long, phone: String, type: String, body: String) {
         if (body.isBlank()) return
-        writableDatabase.execSQL("INSERT INTO WhatsAppMessages(StudentId,Phone,MessageType,MessageBody,Status,CreatedAt) VALUES(?,?,?,?, 'Queued',?)", arrayOf(studentId, phone.trim(), type, body, now()))
+        writableDatabase.execSQL("INSERT INTO WhatsAppMessages(StudentId,Phone,MessageType,MessageBody,Status,CreatedAt) VALUES(?,?,?,?, 'Queued',?)", arrayOf<Any?>(studentId, phone.trim(), type, body, now()))
     }
 
     fun monthlyReport(): MonthlyReport {
