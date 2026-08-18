@@ -1,5 +1,7 @@
 # YazedTeacherPro Android Build
 
-Status: RUNNING
+Status: SUCCESS
+APK: YazedTeacherPro.apk
+Release tag: latest
 Source commit: d95261ea933663df13affde88dc83e83d288215b
-Started by: GitHub Actions
+Download: https://github.com/sarhanspeed/YazedTeacherPro/releases/latest/download/YazedTeacherPro.apk
