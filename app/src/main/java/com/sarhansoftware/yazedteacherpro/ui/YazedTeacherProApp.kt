@@ -139,7 +139,7 @@ private enum class AppScreen(val title: String, val icon: ImageVector) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun MainShell(db: YazedTeacherProDb, user: String, onLogout: () -> Unit) {
+fun MainShell(db: YazedTeacherProDb, user: String, onLogout: () -> Unit) {
     var screen by remember { mutableStateOf(AppScreen.Dashboard) }
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
