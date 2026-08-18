@@ -30,7 +30,10 @@ jobs:
           set -euo pipefail
           if [ -d bootstrap ]; then
             TARGET_BRANCH="${GITHUB_HEAD_REF:-main}"
-            cat bootstrap/part*.txt | base64 -d > /tmp/YazedTeacherPro_Source.zip
+            {
+              head -c 8000 bootstrap/part01.txt
+              cat bootstrap/part02.txt bootstrap/part03.txt bootstrap/part04.txt bootstrap/part05.txt
+            } | base64 -d > /tmp/YazedTeacherPro_Source.zip
             rm -rf /tmp/yazed-src
             mkdir -p /tmp/yazed-src
             unzip -q /tmp/YazedTeacherPro_Source.zip -d /tmp/yazed-src
