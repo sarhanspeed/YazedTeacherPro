@@ -24,6 +24,23 @@ jobs:
         with:
           ref: ${{ github.head_ref || github.ref_name }}
 
+      - name: Record cloud build start
+        if: github.event_name != 'pull_request'
+        shell: bash
+        run: |
+          cat > BUILD_STATUS.md <<EOF
+          # YazedTeacherPro Android Build
+
+          Status: RUNNING
+          Source commit: ${GITHUB_SHA}
+          Started by: GitHub Actions
+          EOF
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add BUILD_STATUS.md
+          git commit -m "Record Android cloud build start [skip ci]" || true
+          git push origin HEAD:main
+
       - name: Import Android source on first run
         shell: bash
         run: |
@@ -130,7 +147,7 @@ jobs:
             --notes "Installable Android APK built automatically by GitHub Actions from commit ${GITHUB_SHA}."
 
       - name: Record successful cloud build
-        if: github.event_name != 'pull_request'
+        if: success() && github.event_name != 'pull_request'
         shell: bash
         run: |
           cat > BUILD_STATUS.md <<EOF
@@ -142,8 +159,23 @@ jobs:
           Source commit: ${GITHUB_SHA}
           Download: https://github.com/${GITHUB_REPOSITORY}/releases/latest/download/YazedTeacherPro.apk
           EOF
+          git add BUILD_STATUS.md
+          git commit -m "Record successful Android cloud build [skip ci]" || true
+          git push origin HEAD:main
+
+      - name: Record failed cloud build
+        if: failure() && github.event_name != 'pull_request'
+        shell: bash
+        run: |
+          cat > BUILD_STATUS.md <<EOF
+          # YazedTeacherPro Android Build
+
+          Status: FAILED
+          Source commit: ${GITHUB_SHA}
+          Check GitHub Actions for the failed job details.
+          EOF
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add BUILD_STATUS.md
-          git commit -m "Record successful Android cloud build [skip ci]" || exit 0
+          git commit -m "Record failed Android cloud build [skip ci]" || true
           git push origin HEAD:main
