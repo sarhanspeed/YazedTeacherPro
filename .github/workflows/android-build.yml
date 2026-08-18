@@ -3,13 +3,15 @@ name: Build YazedTeacherPro APK
 on:
   push:
     branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
   workflow_dispatch:
 
 permissions:
   contents: write
 
 concurrency:
-  group: yazedteacherpro-android-release
+  group: yazedteacherpro-android-release-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -19,12 +21,15 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref || github.ref_name }}
 
       - name: Import Android source on first run
         shell: bash
         run: |
           set -euo pipefail
           if [ -d bootstrap ]; then
+            TARGET_BRANCH="${GITHUB_HEAD_REF:-main}"
             cat bootstrap/part*.txt | base64 -d > /tmp/YazedTeacherPro_Source.zip
             rm -rf /tmp/yazed-src
             mkdir -p /tmp/yazed-src
@@ -36,7 +41,7 @@ jobs:
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
             git add -A
             git commit -m "Import YazedTeacherPro Android source"
-            git push origin HEAD:main
+            git push origin HEAD:"${TARGET_BRANCH}"
           fi
 
       - name: Set up Java 17
@@ -77,6 +82,7 @@ jobs:
           retention-days: 30
 
       - name: Publish latest APK release
+        if: github.event_name != 'pull_request'
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
